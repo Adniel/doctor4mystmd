@@ -1,0 +1,47 @@
+version: 1
+
+project:
+  title: "MyST Documentation Site"
+  description: "A sample MyST documentation site published to SharePoint"
+  authors:
+    - "Documentation Team"
+  keywords:
+    - "documentation"
+    - "myst"
+    - "sharepoint"
+    - "markdown"
+  
+  toc:
+    - file: index.md
+      title: "Home"
+    - file: getting-started.md
+      title: "Getting Started"
+    - title: "User Guide"
+      children:
+        - file: user-guide/introduction.md
+          title: "Introduction"
+        - file: user-guide/installation.md
+          title: "Installation"
+        - file: user-guide/configuration.md
+          title: "Configuration"
+        - file: user-guide/usage.md
+          title: "Usage Examples"
+    - title: "Advanced Topics"
+      children:
+        - file: advanced/customization.md
+          title: "Customization"
+        - file: advanced/extensions.md
+          title: "Extensions"
+        - file: advanced/troubleshooting.md
+          title: "Troubleshooting"
+    - file: api-reference.md
+      title: "API Reference"
+    - file: changelog.md
+      title: "Changelog"
+
+site:
+  title: "MyST Documentation"
+  description: "Complete documentation for MyST Markdown"
+  url: "https://yourtenant.sharepoint.com/sites/myst-docs"
+  logo: "/assets/logo.png"
+  favicon: "/assets/favicon.ico"

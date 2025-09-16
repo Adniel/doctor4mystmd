@@ -1,0 +1,47 @@
+version: 1
+
+project:
+  title: "Sample MyST Project"
+  description: "A complete sample project demonstrating Doctor4MySTMD features"
+  authors:
+    - "Documentation Team"
+  keywords:
+    - "sample"
+    - "myst"
+    - "sharepoint"
+    - "documentation"
+  
+  toc:
+    - file: index.md
+      title: "Home"
+    - file: getting-started.md
+      title: "Getting Started"
+    - title: "User Guide"
+      children:
+        - file: user-guide/introduction.md
+          title: "Introduction"
+        - file: user-guide/installation.md
+          title: "Installation"
+        - file: user-guide/configuration.md
+          title: "Configuration"
+        - file: user-guide/usage.md
+          title: "Usage Examples"
+    - title: "Advanced Topics"
+      children:
+        - file: advanced/customization.md
+          title: "Customization"
+        - file: advanced/extensions.md
+          title: "Extensions"
+        - file: advanced/troubleshooting.md
+          title: "Troubleshooting"
+    - file: api-reference.md
+      title: "API Reference"
+    - file: changelog.md
+      title: "Changelog"
+
+site:
+  title: "Sample MyST Documentation"
+  description: "Complete sample documentation for MyST with SharePoint"
+  url: "https://yourtenant.sharepoint.com/sites/sample-docs"
+  logo: "/assets/logo.png"
+  favicon: "/assets/favicon.ico"

@@ -7,6 +7,11 @@ Publish MyST Markdown content to SharePoint using Doctor. This tool bridges the 
 - **MyST AST Parsing**: Parse MyST Markdown files to Abstract Syntax Tree using `mystmd`
 - **AST Transformation**: Convert MyST AST to Doctor-compatible Markdown or HTML
 - **SharePoint Publishing**: Publish content to SharePoint using Doctor CLI
+- **TOC Structure**: Use `myst.yml` configuration for hierarchical page organization
+- **Cross-References**: Automatic cross-page reference resolution and linking
+- **Frontmatter Support**: Map MyST frontmatter metadata to SharePoint page properties
+- **Navigation Generation**: Automatic breadcrumbs, page navigation, and site navigation
+- **Static Resource Handling**: Upload images, CSS, JS, documents, and other assets to SharePoint
 - **Batch Processing**: Process multiple files or entire directories
 - **Flexible Configuration**: Support for various SharePoint configurations
 - **Command Line Interface**: Easy-to-use CLI for all operations
@@ -38,9 +43,32 @@ npm install -g .
 
 ## Quick Start
 
-### 1. Configure Doctor
+### Option 1: Automated Setup
 
-First, set up your SharePoint configuration:
+Run the quick start script to set up everything automatically:
+
+```bash
+# Make the script executable and run it
+chmod +x scripts/quick-start.sh
+./scripts/quick-start.sh
+```
+
+### Option 2: Manual Setup
+
+#### 1. Install Prerequisites
+
+```bash
+# Install MyST CLI
+npm install -g mystmd
+
+# Install Doctor
+npm install -g @estruyf/doctor
+
+# Install Doctor4MySTMD
+npm install -g .
+```
+
+#### 2. Configure Doctor
 
 ```bash
 # Set SharePoint site URL
@@ -50,7 +78,7 @@ doctor4mystmd config --site-url "https://yourtenant.sharepoint.com/sites/yoursit
 doctor4mystmd config --list-id "your-list-id" --folder-path "Documents/MyST"
 ```
 
-### 2. Publish MyST Content
+#### 3. Publish MyST Content
 
 ```bash
 # Publish a single file
@@ -59,9 +87,23 @@ doctor4mystmd publish ./my-document.md --title "My Document"
 # Publish all Markdown files in a directory
 doctor4mystmd publish ./docs --pattern "**/*.md"
 
+# Publish using TOC structure from myst.yml
+doctor4mystmd publish-toc ./myst.yml --site-url "https://yourtenant.sharepoint.com/sites/yoursite"
+
 # Dry run to see what would be published
-doctor4mystmd publish ./docs --dry-run
+doctor4mystmd publish-toc ./myst.yml --dry-run
 ```
+
+### 📖 Complete Getting Started Guide
+
+For detailed step-by-step instructions, see **[GETTING_STARTED.md](GETTING_STARTED.md)** - a comprehensive guide that walks you through:
+
+- Setting up your environment
+- Creating a MyST project structure
+- Adding content with frontmatter metadata
+- Configuring SharePoint connection
+- Publishing and maintaining content
+- Troubleshooting common issues
 
 ## Usage
 
@@ -105,8 +147,14 @@ doctor4mystmd publish ./document.md --title "My Document" --description "A sampl
 # Publish entire directory
 doctor4mystmd publish ./docs --pattern "**/*.md"
 
+# Publish using TOC structure
+doctor4mystmd publish-toc ./myst.yml --site-url "https://yourtenant.sharepoint.com/sites/yoursite"
+
+# With navigation and metadata
+doctor4mystmd publish-toc ./myst.yml --add-navigation --add-site-navigation
+
 # Dry run to preview
-doctor4mystmd publish ./docs --dry-run
+doctor4mystmd publish-toc ./myst.yml --dry-run
 ```
 
 #### Manage Configuration
@@ -202,6 +250,84 @@ interface TransformOptions {
 }
 ```
 
+## MyST Frontmatter Support
+
+Doctor4MySTMD automatically extracts and maps MyST frontmatter metadata to SharePoint page properties:
+
+### Supported Frontmatter Fields
+
+```yaml
+---
+title: "Document Title"                    # → SharePoint Title
+authors:                                  # → SharePoint Author
+  - name: "John Doe"
+    affiliation: "University"
+    email: "john@example.com"
+date: "2024-01-15"                       # → SharePoint Created
+modified: "2024-01-20"                   # → SharePoint Modified
+description: "Document description"       # → SharePoint Description
+keywords: ["tag1", "tag2"]               # → SharePoint Keywords
+tags: ["category1", "category2"]         # → SharePoint Tags
+status: "published"                      # → SharePoint Status
+version: "1.0.0"                         # → SharePoint Version
+license: "MIT"                           # → Custom field
+doi: "10.1000/example"                   # → Custom field
+---
+```
+
+### Metadata Mapping
+
+| MyST Frontmatter | SharePoint Field | Notes |
+|------------------|------------------|-------|
+| `title` | Title | Document title |
+| `authors` | Author | Comma-separated author names |
+| `date` | Created | Publication date |
+| `modified` | Modified | Last modified date |
+| `description` | Description | Document summary |
+| `keywords` | Keywords | Semicolon-separated keywords |
+| `tags` | Tags | Semicolon-separated tags |
+| `status` | Status | Document status |
+| `version` | Version | Document version |
+| Custom fields | Custom fields | Any additional fields |
+
+## Static Resource Handling
+
+Doctor4MySTMD automatically handles static resources like images, CSS, JavaScript, and documents:
+
+### Supported Resource Types
+
+- **Images**: PNG, JPG, JPEG, GIF, SVG, WebP, ICO
+- **Stylesheets**: CSS files
+- **Scripts**: JavaScript files
+- **Documents**: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
+- **Archives**: ZIP, TAR, GZ
+- **Fonts**: WOFF, WOFF2, TTF, EOT
+
+### Resource Upload Options
+
+```bash
+# Basic resource upload
+doctor4mystmd publish-toc ./myst.yml --upload-resources
+
+# Advanced options
+doctor4mystmd publish-toc ./myst.yml \
+  --upload-resources \
+  --assets-dir "assets" \
+  --preserve-structure \
+  --max-file-size 50 \
+  --allowed-extensions "png,jpg,pdf,css,js" \
+  --excluded-patterns "temp,backup"
+```
+
+### Resource Configuration
+
+- `--upload-resources`: Enable static resource upload
+- `--assets-dir`: Directory name for assets in SharePoint (default: "assets")
+- `--preserve-structure`: Maintain folder structure when uploading (default: true)
+- `--max-file-size`: Maximum file size in MB (default: 10)
+- `--allowed-extensions`: Comma-separated list of allowed extensions
+- `--excluded-patterns`: Patterns to exclude from uploads
+
 ## Supported MyST Features
 
 The transformer supports most MyST Markdown features:
@@ -212,9 +338,11 @@ The transformer supports most MyST Markdown features:
 - **Code blocks**: With syntax highlighting
 - **Tables**: Basic table support
 - **Math**: Inline and block math expressions
-- **MyST Roles**: Custom role mappings
+- **MyST Roles**: Custom role mappings with cross-reference support
 - **MyST Directives**: Custom directive support
 - **Block quotes**: Nested quote support
+- **Cross-References**: Automatic linking between pages
+- **Navigation**: Breadcrumbs and page navigation
 
 ## Custom Mappings
 

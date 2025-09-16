@@ -7,14 +7,17 @@ import { promisify } from 'util';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { MySTDocument, MySTNode } from './types';
+import { FrontmatterParser, MySTFrontmatter } from './frontmatter-parser';
 
 const execAsync = promisify(exec);
 
 export class MySTASTParser {
   private mystmdPath: string;
+  private frontmatterParser: FrontmatterParser;
 
   constructor(mystmdPath: string = 'mystmd') {
     this.mystmdPath = mystmdPath;
+    this.frontmatterParser = new FrontmatterParser();
   }
 
   /**
@@ -28,6 +31,36 @@ export class MySTASTParser {
       return ast as MySTDocument;
     } catch (error) {
       throw new Error(`Failed to parse MyST file ${filePath}: ${error}`);
+    }
+  }
+
+  /**
+   * Parse a MyST Markdown file to AST with frontmatter
+   */
+  async parseFileWithFrontmatter(filePath: string): Promise<{ ast: MySTDocument; frontmatter: MySTFrontmatter }> {
+    try {
+      // Parse frontmatter first
+      const { frontmatter, content } = await this.frontmatterParser.parseFrontmatterFromFile(filePath);
+      
+      // Create temporary file without frontmatter for mystmd parsing
+      const tempFile = path.join(process.cwd(), `temp-${path.basename(filePath)}`);
+      await fs.writeFile(tempFile, content, 'utf8');
+      
+      try {
+        // Use mystmd to parse the file to AST
+        const { stdout } = await execAsync(`${this.mystmdPath} parse "${tempFile}" --format json`);
+        const ast = JSON.parse(stdout);
+        
+        return {
+          ast: ast as MySTDocument,
+          frontmatter
+        };
+      } finally {
+        // Clean up temporary file
+        await fs.remove(tempFile);
+      }
+    } catch (error) {
+      throw new Error(`Failed to parse MyST file with frontmatter ${filePath}: ${error}`);
     }
   }
 

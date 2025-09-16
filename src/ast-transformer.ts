@@ -3,29 +3,67 @@
  */
 
 import { MySTDocument, MySTNode, TransformOptions } from './types';
+import { PageStructureManager, CrossReference } from './page-structure-manager';
+import { StaticResourceHandler, ResourceUploadOptions } from './static-resource-handler';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
 export class MySTASTTransformer {
   private options: TransformOptions;
+  private pageStructureManager?: PageStructureManager;
+  private currentPageSlug?: string;
+  private staticResourceHandler?: StaticResourceHandler;
+  private resourceUploadOptions?: ResourceUploadOptions;
 
-  constructor(options: TransformOptions) {
+  constructor(
+    options: TransformOptions, 
+    pageStructureManager?: PageStructureManager,
+    staticResourceHandler?: StaticResourceHandler
+  ) {
     this.options = options;
+    this.pageStructureManager = pageStructureManager;
+    this.staticResourceHandler = staticResourceHandler;
+  }
+
+  /**
+   * Set current page context for cross-references
+   */
+  setCurrentPage(slug: string): void {
+    this.currentPageSlug = slug;
+  }
+
+  /**
+   * Set resource upload options
+   */
+  setResourceUploadOptions(options: ResourceUploadOptions): void {
+    this.resourceUploadOptions = options;
   }
 
   /**
    * Transform MyST AST to Doctor-compatible Markdown
    */
-  async transformToMarkdown(ast: MySTDocument): Promise<string> {
-    const markdown = this.astToMarkdown(ast);
+  async transformToMarkdown(ast: MySTDocument, contentPath?: string): Promise<string> {
+    let markdown = this.astToMarkdown(ast);
+    
+    // Handle static resources if configured
+    if (this.staticResourceHandler && this.resourceUploadOptions && contentPath) {
+      markdown = await this.processStaticResources(markdown, contentPath);
+    }
+    
     return markdown;
   }
 
   /**
    * Transform MyST AST to HTML
    */
-  async transformToHTML(ast: MySTDocument): Promise<string> {
-    const html = this.astToHTML(ast);
+  async transformToHTML(ast: MySTDocument, contentPath?: string): Promise<string> {
+    let html = this.astToHTML(ast);
+    
+    // Handle static resources if configured
+    if (this.staticResourceHandler && this.resourceUploadOptions && contentPath) {
+      html = await this.processStaticResources(html, contentPath);
+    }
+    
     return html;
   }
 
@@ -252,6 +290,14 @@ export class MySTASTTransformer {
     const name = node.name || '';
     const value = this.getNodeText(node);
     
+    // Handle cross-references
+    if (name === 'ref' && this.pageStructureManager && this.currentPageSlug) {
+      const resolvedRef = this.resolveCrossReference(value);
+      if (resolvedRef) {
+        return `[${value}](${resolvedRef})`;
+      }
+    }
+    
     // Map common MyST roles to Markdown equivalents
     const roleMappings: Record<string, string> = {
       'ref': `[${value}]`,
@@ -270,6 +316,14 @@ export class MySTASTTransformer {
   private mystRoleToHTML(node: MySTNode): string {
     const name = node.name || '';
     const value = this.getNodeText(node);
+    
+    // Handle cross-references
+    if (name === 'ref' && this.pageStructureManager && this.currentPageSlug) {
+      const resolvedRef = this.resolveCrossReference(value);
+      if (resolvedRef) {
+        return `<a href="${resolvedRef}">${value}</a>`;
+      }
+    }
     
     // Map common MyST roles to HTML
     const roleMappings: Record<string, string> = {
@@ -342,5 +396,117 @@ export class MySTASTTransformer {
     }
     
     return '';
+  }
+
+  /**
+   * Resolve cross-reference
+   */
+  private resolveCrossReference(ref: string): string | null {
+    if (!this.pageStructureManager || !this.currentPageSlug) {
+      return null;
+    }
+
+    // Handle different reference types
+    if (ref.startsWith('#')) {
+      return ref; // Internal anchor
+    }
+
+    if (ref.startsWith('http')) {
+      return ref; // External URL
+    }
+
+    // Try to resolve by title or slug
+    const pageStructure = this.pageStructureManager.getPageStructure();
+    if (!pageStructure) return null;
+
+    for (const [slug, page] of pageStructure.pages) {
+      if (page.title === ref || slug === ref) {
+        return `#${slug}`;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Add navigation to content
+   */
+  addNavigationToContent(content: string, pageSlug: string): string {
+    if (!this.pageStructureManager || !this.currentPageSlug) {
+      return content;
+    }
+
+    const navigationHTML = this.pageStructureManager.generateNavigationHTML(pageSlug, this.currentPageSlug);
+    
+    if (this.options.outputFormat === 'html') {
+      // Insert navigation at the beginning of the body
+      return content.replace('<body>', `<body>\n${navigationHTML}`);
+    } else {
+      // For Markdown, add navigation as HTML
+      return `${navigationHTML}\n\n${content}`;
+    }
+  }
+
+  /**
+   * Add site navigation to content
+   */
+  addSiteNavigationToContent(content: string): string {
+    if (!this.pageStructureManager) {
+      return content;
+    }
+
+    const siteNavigationHTML = this.pageStructureManager.generateSiteNavigationHTML();
+    
+    if (this.options.outputFormat === 'html') {
+      // Insert site navigation in the head or at the beginning
+      return content.replace('<body>', `<body>\n${siteNavigationHTML}`);
+    } else {
+      // For Markdown, add navigation as HTML
+      return `${siteNavigationHTML}\n\n${content}`;
+    }
+  }
+
+  /**
+   * Process static resources in content
+   */
+  private async processStaticResources(content: string, contentPath: string): Promise<string> {
+    if (!this.staticResourceHandler || !this.resourceUploadOptions) {
+      return content;
+    }
+
+    try {
+      // Extract resources from content
+      const resources = await this.staticResourceHandler.extractResources(
+        content, 
+        contentPath, 
+        this.resourceUploadOptions
+      );
+
+      if (resources.length === 0) {
+        return content;
+      }
+
+      console.log(`📦 Found ${resources.length} static resources`);
+
+      // Upload resources to SharePoint
+      const uploadedResources = await this.staticResourceHandler.uploadResources(
+        resources, 
+        this.resourceUploadOptions
+      );
+
+      // Update content with SharePoint URLs
+      const updatedContent = this.staticResourceHandler.updateContentWithSharePointUrls(
+        content, 
+        uploadedResources
+      );
+
+      // Log resource report
+      console.log(this.staticResourceHandler.generateResourceReport());
+
+      return updatedContent;
+    } catch (error) {
+      console.warn(`⚠️  Error processing static resources: ${error}`);
+      return content;
+    }
   }
 }

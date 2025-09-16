@@ -7,6 +7,7 @@ import { promisify } from 'util';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { DoctorConfig } from './types';
+import { SharePointMetadata } from './frontmatter-parser';
 
 const execAsync = promisify(exec);
 
@@ -54,7 +55,7 @@ export class DoctorIntegration {
   /**
    * Publish a single file to SharePoint
    */
-  async publishFile(filePath: string, options: { title?: string; description?: string } = {}): Promise<void> {
+  async publishFile(filePath: string, options: { title?: string; description?: string; metadata?: SharePointMetadata } = {}): Promise<void> {
     try {
       const args = [
         'publish',
@@ -76,6 +77,15 @@ export class DoctorIntegration {
 
       if (options.description) {
         args.push('--description', options.description);
+      }
+
+      // Add metadata if provided
+      if (options.metadata) {
+        for (const [key, value] of Object.entries(options.metadata)) {
+          if (value !== undefined && value !== null && value !== '') {
+            args.push(`--${key.toLowerCase()}`, String(value));
+          }
+        }
       }
 
       const command = `${this.doctorPath} ${args.join(' ')}`;
@@ -100,7 +110,7 @@ export class DoctorIntegration {
    */
   async publishFiles(
     filePaths: string[], 
-    options: { title?: string; description?: string } = {}
+    options: { title?: string; description?: string; metadata?: SharePointMetadata } = {}
   ): Promise<Map<string, boolean>> {
     const results = new Map<string, boolean>();
     
@@ -124,7 +134,7 @@ export class DoctorIntegration {
   async publishDirectory(
     dirPath: string, 
     pattern: string = '**/*.md',
-    options: { title?: string; description?: string } = {}
+    options: { title?: string; description?: string; metadata?: SharePointMetadata } = {}
   ): Promise<Map<string, boolean>> {
     const glob = require('glob');
     const files = glob.sync(pattern, { cwd: dirPath });
@@ -139,7 +149,7 @@ export class DoctorIntegration {
   async createPage(
     title: string,
     content: string,
-    options: { description?: string; tags?: string[] } = {}
+    options: { description?: string; tags?: string[]; metadata?: SharePointMetadata } = {}
   ): Promise<void> {
     try {
       // Create temporary file
@@ -149,7 +159,8 @@ export class DoctorIntegration {
       // Publish the temporary file
       await this.publishFile(tempFile, {
         title,
-        description: options.description
+        description: options.description,
+        metadata: options.metadata
       });
       
       // Clean up temporary file
@@ -165,7 +176,7 @@ export class DoctorIntegration {
   async updatePage(
     pageId: string,
     content: string,
-    options: { title?: string; description?: string } = {}
+    options: { title?: string; description?: string; metadata?: SharePointMetadata } = {}
   ): Promise<void> {
     try {
       const args = [
@@ -180,6 +191,15 @@ export class DoctorIntegration {
 
       if (options.description) {
         args.push('--description', options.description);
+      }
+
+      // Add metadata if provided
+      if (options.metadata) {
+        for (const [key, value] of Object.entries(options.metadata)) {
+          if (value !== undefined && value !== null && value !== '') {
+            args.push(`--${key.toLowerCase()}`, String(value));
+          }
+        }
       }
 
       const command = `${this.doctorPath} ${args.join(' ')}`;
