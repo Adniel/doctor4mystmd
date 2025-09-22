@@ -33,7 +33,7 @@ export class Doctor4MySTMD {
   constructor(
     doctorConfig: DoctorConfig,
     transformOptions: TransformOptions,
-    mystmdPath: string = 'mystmd',
+    mystmdPath: string = 'npx mystmd',
     doctorPath: string = 'doctor'
   ) {
     this.parser = new MySTASTParser(mystmdPath);
