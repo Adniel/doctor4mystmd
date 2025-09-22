@@ -15,7 +15,7 @@ export class DoctorIntegration {
   private config: DoctorConfig;
   private doctorPath: string;
 
-  constructor(config: DoctorConfig, doctorPath: string = 'doctor') {
+  constructor(config: DoctorConfig, doctorPath: string = 'npx doctor') {
     this.config = config;
     this.doctorPath = doctorPath;
   }

@@ -25,32 +25,22 @@ fi
 
 echo "✅ npm found: $(npm --version)"
 
-# Install MyST CLI if not already installed
-if ! command -v mystmd &> /dev/null; then
-    echo "📦 Installing MyST CLI..."
-    if npm install -g mystmd 2>/dev/null; then
-        echo "✅ MyST CLI installed"
-    else
-        echo "⚠️  Failed to install MyST CLI globally. You may need to run with sudo or use a different approach."
-        echo "   Try: sudo npm install -g mystmd"
-        echo "   Or: npm install mystmd (local installation)"
-    fi
+# Install MyST CLI locally
+echo "📦 Installing MyST CLI locally..."
+if npm install mystmd 2>/dev/null; then
+    echo "✅ MyST CLI installed locally"
 else
-    echo "✅ MyST CLI found: $(mystmd --version)"
+    echo "⚠️  Failed to install MyST CLI locally. You may need to check your npm configuration."
+    echo "   Try: npm install mystmd"
 fi
 
-# Install Doctor if not already installed
-if ! command -v doctor &> /dev/null; then
-    echo "📦 Installing Doctor..."
-    if npm install -g @estruyf/doctor 2>/dev/null; then
-        echo "✅ Doctor installed"
-    else
-        echo "⚠️  Failed to install Doctor globally. You may need to run with sudo or use a different approach."
-        echo "   Try: sudo npm install -g @estruyf/doctor"
-        echo "   Or: npm install @estruyf/doctor (local installation)"
-    fi
+# Install Doctor locally
+echo "📦 Installing Doctor locally..."
+if npm install @estruyf/doctor 2>/dev/null; then
+    echo "✅ Doctor installed locally"
 else
-    echo "✅ Doctor found: $(doctor --version)"
+    echo "⚠️  Failed to install Doctor locally. You may need to check your npm configuration."
+    echo "   Try: npm install @estruyf/doctor"
 fi
 
 # Check if Doctor4MySTMD is built

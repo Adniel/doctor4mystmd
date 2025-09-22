@@ -36,7 +36,7 @@ export class StaticResourceHandler {
   private doctorPath: string;
   private resources: Map<string, StaticResource> = new Map();
 
-  constructor(config: DoctorConfig, doctorPath: string = 'doctor') {
+  constructor(config: DoctorConfig, doctorPath: string = 'npx doctor') {
     this.config = config;
     this.doctorPath = doctorPath;
   }
