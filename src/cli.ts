@@ -18,6 +18,33 @@ import { DoctorConfig, TransformOptions, PublishOptions } from './types';
 
 const program = new Command();
 
+// Helper function to read site URL from config file or options
+async function getSiteUrl(options: any): Promise<string> {
+  let siteUrl = options.siteUrl;
+
+  if (!siteUrl) {
+    try {
+      const configPath = path.join(process.cwd(), 'doctor.config.json');
+      if (await fs.pathExists(configPath)) {
+        const configData = await fs.readJson(configPath);
+        siteUrl = configData.siteUrl;
+        console.log(`📖 Using site URL from doctor.config.json: ${siteUrl}`);
+      }
+    } catch (error) {
+      console.warn('⚠️  Could not read doctor.config.json:', error);
+    }
+  }
+
+  if (!siteUrl) {
+    console.error('❌ Error: --site-url is required or provide doctor.config.json');
+    console.error('   Either use: --site-url "https://yourtenant.sharepoint.com/sites/yoursite"');
+    console.error('   Or create: doctor.config.json with siteUrl property');
+    process.exit(1);
+  }
+
+  return siteUrl;
+}
+
 program
   .name('doctor4mystmd')
   .description('Publish MyST Markdown content to SharePoint using Doctor')
@@ -131,13 +158,10 @@ program
   .option('--dry-run', 'Show what would be published without actually publishing', false)
   .action(async (input: string, options: any) => {
     try {
-      if (!options.siteUrl) {
-        console.error('❌ Error: --site-url is required');
-        process.exit(1);
-      }
+      const siteUrl = await getSiteUrl(options);
       
       const doctorConfig: DoctorConfig = {
-        siteUrl: options.siteUrl,
+        siteUrl: siteUrl,
         listId: options.listId,
         folderPath: options.folderPath,
         authentication: {
@@ -281,13 +305,10 @@ program
   .option('--dry-run', 'Show what would be published without actually publishing', false)
   .action(async (config: string, options: any) => {
     try {
-      if (!options.siteUrl) {
-        console.error('❌ Error: --site-url is required');
-        process.exit(1);
-      }
-
+      const siteUrl = await getSiteUrl(options);
+      
       const doctorConfig: DoctorConfig = {
-        siteUrl: options.siteUrl,
+        siteUrl: siteUrl,
         listId: options.listId,
         folderPath: options.folderPath,
         authentication: {
