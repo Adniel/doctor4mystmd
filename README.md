@@ -70,6 +70,7 @@ npm install -g .
 
 #### 2. Configure Doctor
 
+**Option A: Using command line parameters**
 ```bash
 # Set SharePoint site URL
 doctor4mystmd config --site-url "https://yourtenant.sharepoint.com/sites/yoursite"
@@ -77,6 +78,21 @@ doctor4mystmd config --site-url "https://yourtenant.sharepoint.com/sites/yoursit
 # Optional: Set list ID and folder path
 doctor4mystmd config --list-id "your-list-id" --folder-path "Documents/MyST"
 ```
+
+**Option B: Using configuration file**
+Create a `doctor.config.json` file in your project root:
+```json
+{
+  "siteUrl": "https://yourtenant.sharepoint.com/sites/yoursite",
+  "listId": "your-list-id",
+  "folderPath": "Documents/MyST",
+  "authentication": {
+    "type": "spfx"
+  }
+}
+```
+
+The CLI will automatically read from this file when `--site-url` is not provided.
 
 #### 3. Publish MyST Content
 
@@ -87,7 +103,10 @@ doctor4mystmd publish ./my-document.md --title "My Document"
 # Publish all Markdown files in a directory
 doctor4mystmd publish ./docs --pattern "**/*.md"
 
-# Publish using TOC structure from myst.yml
+# Publish using TOC structure from myst.yml (with config file)
+doctor4mystmd publish-toc ./myst.yml
+
+# Publish using TOC structure from myst.yml (with command line)
 doctor4mystmd publish-toc ./myst.yml --site-url "https://yourtenant.sharepoint.com/sites/yoursite"
 
 # Dry run to see what would be published

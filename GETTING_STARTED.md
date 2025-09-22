@@ -269,6 +269,8 @@ Retrieve a list of users.
 ## Step 3: Configure SharePoint Connection
 
 ### Set Up Doctor Configuration
+
+**Option A: Using command line**
 ```bash
 # Configure your SharePoint site
 doctor4mystmd config --site-url "https://yourtenant.sharepoint.com/sites/your-site"
@@ -276,6 +278,21 @@ doctor4mystmd config --site-url "https://yourtenant.sharepoint.com/sites/your-si
 # Optional: Set list ID and folder path
 doctor4mystmd config --list-id "your-list-id" --folder-path "Documents/MyST"
 ```
+
+**Option B: Using configuration file**
+Create a `doctor.config.json` file in your project root:
+```json
+{
+  "siteUrl": "https://yourtenant.sharepoint.com/sites/your-site",
+  "listId": "your-list-id",
+  "folderPath": "Documents/MyST",
+  "authentication": {
+    "type": "spfx"
+  }
+}
+```
+
+The CLI will automatically read from this file when `--site-url` is not provided.
 
 ### Verify Configuration
 ```bash
